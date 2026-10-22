@@ -4,63 +4,34 @@
 
 using namespace std;
 
-// Зовнішня функція 
-void analyzeBudget(Project p) {
-    cout << "Аналіз: бюджет проекту " << p.id << " складає " << p.getSupplier().getPrice() << "$\n";
-}
-// Перевантажена функція
-void analyzeBudget(Project* p) {
-    cout << "Аналіз за адресою: постачальник " << p->getSupplier().contactPhone << "\n";
-}
-
-Project createStandardProject() {
-    Supplier baseSup("СтандартБуд", "Бетон", 5000, 2, 100, "099-000-00", true, 5);
-    return Project(999, "Типове ТЗ", "Міськрада", 5, 50000, baseSup);
-}
-
 int main() {
     SetConsoleCP(65001);
     SetConsoleOutputCP(65001);
 
-    Project::printTotal();
-    cout << "\nВІДСЛІДКОВУВАННЯ ДЕСТРУКТОРА\n";
+    Supplier baseSup("СтандартБуд", "Бетон", 5000, 2, 100, "099-000-00", true, 5);
+
+    cout << "\n=== П.7: ДЕМОНСТРАЦІЯ ПРОСТОГО НАСЛІДУВАННЯ (LocalSupplier) ===\n";
     {
-        Supplier tempSup;
-        Project tempProj(1, "Тимчасовий ТЗ", "ТОВ", 3, 1000, tempSup);
-    }
+        LocalSupplier locSup("УкрЦегла", "Цегла", 3000, 1, 500, "044-111", true, 4, "Київська область");
+        locSup.showLocalInfo();
+    } 
 
-    cout << "\nСТВОРЕННЯ І КОПІЮВАННЯ ОБ'ЄКТІВ\n";
-    Supplier mainSup("ЕкоБуд", "Цегла", 75000, 5, 1000, "067-111", true, 5);
-    Project p1;                                                       
-    Project p2(2, "ЖК Мрія", "ТОВ Буд", 15, 200000, mainSup);          
-    Project p3 = p2;                                                  
+    cout << "\n=== П.7: ДЕМОНСТРАЦІЯ МНОЖИННОГО НАСЛІДУВАННЯ (StateProject) ===\n";
+    {
+        // Виклики конструкторів  Project Standard Funding StateProject
+        StateProject govProj(777, "Школа", "Міносвіти", 3, 500000, baseSup, "ДСТУ-2026", 150000, "Міністерство Освіти");
 
-    p2.printInfo();
+        govProj.showStateProjectDetails();
 
-    cout << "\nДИНАМІЧНА ПАМ'ЯТЬ ТА МЕТОДИ ЛАБ 2\n";
-    Project* dynProj = new Project(3, "ТРЦ", "Інвестор", 4, 100000, mainSup);
-    dynProj->generateAndSortFloors(); // Виклик методу з другої лаби
+        // П.6: Демонстрація оператора using.
+        cout << "\nДемонстрація оператора using:\n";
+        govProj.printInfo();
+    } 
 
-    cout << "\nЗОВНІШНІ ФУНКЦІЇ\n";
-    analyzeBudget(p2);   
-    analyzeBudget(&p2);  
-
-    cout << "\n ВЗАЄМОДІЯ КЛАСІВ (Лаб 3)\n";
-    Supplier altSup("КиївБетон", "Бетон", 80000, 3, 500, "044-222", true, 4);
-
-    // Композиція (П.13): mainSup вже "вбудований" в p2 і змінить його бюджет
-    p2.assignSupplier(mainSup);
-
-    // Агрегація (П.12): Просто тримаємо запасного постачальника на випадок проблеми
-    p2.altSupplier = &altSup;
-
-    // Асоціація (П.11): Незалежний контракт
-    Contract myContract(&p2, &altSup, "10.10.2026");
-
-    Project::printTotal(); 
-
-    cout << "\n=== ОЧИЩЕННЯ ПАМ'ЯТІ ===\n";
-    delete dynProj;
+    cout << "\n=== ЛАБОРАТОРНА 2 ТА 3 (Збережений функціонал) ===\n";
+    Project p2(2, "ЖК Мрія", "ТОВ Буд", 15, 200000, baseSup);
+    p2.generateAndSortFloors();
+    Contract myContract(&p2, &baseSup, "10.10.2026");
 
     return 0;
 }
