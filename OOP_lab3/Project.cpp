@@ -1,23 +1,87 @@
 #define _CRT_SECURE_NO_WARNINGS
 #include "Project.h"
+#include <stdexcept> 
 
-// SUPPLIER 
+// Конструктор базового абстрактного класу
+Document::Document(string a) : author(a) {
+    cout << "[C] Створено Document (автор: " << author << ")\n";
+}
+
+Document::~Document() {
+    cout << "[~] Знищено базову частину Document\n";
+}
+
+
+// Нащадок 1 TechDoc (Технічний документ)
+TechDoc::TechDoc(string a, int pages) : Document(a), pageCount(pages) {
+    cout << "[C] Створено TechDoc на " << pageCount << " сторінок\n";
+}
+TechDoc::~TechDoc() {
+    cout << "[~] Знищено TechDoc\n";
+}
+void TechDoc::showDocType() {
+    cout << "Це технічна документація (Автор: " << author << ")\n";
+}
+void TechDoc::Write(ofstream& os) {
+    os << "TechDoc " << author << " " << pageCount << "\n";
+}
+void TechDoc::Read(ifstream& is) {
+    is >> author >> pageCount;
+}
+
+
+// Нащадок 2 FinDoc (Фінансовий документ)
+FinDoc::FinDoc(string a, double amount) : Document(a), totalAmount(amount) {
+    cout << "[C] Створено FinDoc на суму " << totalAmount << "$\n";
+}
+FinDoc::~FinDoc() {
+    cout << "[~] Знищено FinDoc\n";
+}
+void FinDoc::showDocType() {
+    cout << "Це фінансовий звіт (Автор: " << author << ")\n";
+}
+void FinDoc::Write(ofstream& os) {
+    os << "FinDoc " << author << " " << totalAmount << "\n";
+}
+void FinDoc::Read(ifstream& is) {
+    is >> author >> totalAmount;
+}
+
+
+// Нащадок 3 ComplexDoc (Комплексний документ)
+ComplexDoc::ComplexDoc(string a, int pages, double amount, string ministry)
+    : Document(a), TechDoc(a, pages), FinDoc(a, amount), targetMinistry(ministry) {
+    cout << "[C] Створено ComplexDoc для " << targetMinistry << "\n";
+}
+ComplexDoc::~ComplexDoc() {
+    cout << "[~] Знищено ComplexDoc\n";
+}
+void ComplexDoc::showDocType() {
+    cout << "Це комплексний документ (Технічний + Фінансовий) для " << targetMinistry << "\n";
+}
+void ComplexDoc::Write(ofstream& os) {
+    os << "ComplexDoc " << author << " " << pageCount << " " << totalAmount << " " << targetMinistry << "\n";
+}
+void ComplexDoc::Read(ifstream& is) {
+    is >> author >> pageCount >> totalAmount >> targetMinistry;
+}
+
+
 Supplier::Supplier() {
     companyName = "Немає"; material = "Немає"; price = 0.0; deliveryDays = 0; quantity = 0;
     contactPhone = "-"; isReliable = false; rating = 0;
-    cout << "[C] Викликано базовий конструктор Supplier (за замовчуванням)\n";
 }
 Supplier::Supplier(string name, string mat, double pr, int days, int qty, string phone, bool rel, int rat) {
     companyName = name; material = mat; price = pr; deliveryDays = days; quantity = qty;
     contactPhone = phone; isReliable = rel; rating = rat;
-    cout << "[C] Викликано базовий конструктор Supplier з параметрами\n";
 }
 Supplier::Supplier(const Supplier& other) {
     companyName = other.companyName + " (Копія)"; material = other.material; price = other.price;
     deliveryDays = other.deliveryDays; quantity = other.quantity; contactPhone = other.contactPhone;
     isReliable = other.isReliable; rating = other.rating;
 }
-Supplier::~Supplier() { cout << "[~] Базовий деструктор: Постачальника " << companyName << " видалено.\n"; }
+
+Supplier::~Supplier() { cout << "[~] Знищено постачальника: " << companyName << "\n"; }
 
 string Supplier::getCompanyName() { return companyName; }
 void Supplier::setInfo(string name, string mat, double pr, int days) { companyName = name; material = mat; price = pr; deliveryDays = days; }
@@ -25,50 +89,62 @@ void Supplier::applyDiscount(int percent) { price -= (price * percent / 100.0); 
 void Supplier::applyDiscount(double amount) { price -= amount; }
 Supplier Supplier::getCheaper(Supplier other) { return (this->price < other.price) ? *this : other; }
 double Supplier::getPrice() { return price; }
+
+// метод віртуальний. може бути перевизначений нащадками
 void Supplier::printInfo() { cout << "Постачальник: " << companyName << " | Ціна: " << price << "$\n"; }
 void Supplier::saveToFile(string filename) {}
 void Supplier::loadFromFile(string filename) {}
 
-// LOCAL SUPPLIER (П.3) 
-// П.5 Передача параметрів базовому конструктору всередині похідного
+
 LocalSupplier::LocalSupplier(string name, string mat, double pr, int days, int qty, string phone, bool rel, int rat, string reg)
     : Supplier(name, mat, pr, days, qty, phone, rel, rat), region(reg) {
-    cout << "[C] Викликано похідний конструктор LocalSupplier\n";
 }
-LocalSupplier::~LocalSupplier() { cout << "[~] Похідний деструктор LocalSupplier видаляється\n"; }
+LocalSupplier::~LocalSupplier() { cout << "[~] Знищено локального постачальника\n"; }
 
 void LocalSupplier::showLocalInfo() {
-    // П.6: Доступ через оператор глобального доступу ::
-    cout << "Регіональний постачальник з " << region << ": ";
+    cout << "Регіон: " << region << " | ";
     Supplier::printInfo();
 }
 
-// PROJECT
+
 int Project::totalProjects = 0;
 
 Project::Project() : id(0) {
     projectName = "Пустий проект"; customer = "-"; floors = 0; budget = 0; status = "Новий";
-    isApproved = false; designersCount = 0; altSupplier = nullptr;
     totalProjects++;
-    cout << "[C] Викликано базовий конструктор Project (за замовчуванням)\n";
 }
 Project::Project(int pId, string pName, string cust, int fl, double budg, Supplier mSup)
     : id(pId), mainSupplier(mSup) {
     projectName = pName; customer = cust; floors = fl; budget = budg;
-    status = "В роботі"; isApproved = true; designersCount = 5; altSupplier = nullptr;
+    status = "В роботі";
     totalProjects++;
-    cout << "[C] Викликано базовий конструктор Project з параметрами\n";
 }
 Project::Project(const Project& other)
     : id(other.id + 100), mainSupplier(other.mainSupplier) {
     projectName = other.projectName; customer = other.customer; floors = other.floors;
-    budget = other.budget; status = other.status; isApproved = other.isApproved;
-    designersCount = other.designersCount; altSupplier = other.altSupplier;
+    budget = other.budget;
     totalProjects++;
 }
-Project::~Project() { cout << "[~] Базовий деструктор: Проект " << projectName << " видаляється з пам'яті.\n"; }
 
-void Project::printTotal() { cout << "\n--- Загалом проектів у системі: " << totalProjects << " ---\n"; }
+Project& Project::operator=(const Project& other) {
+    if (this != &other) { 
+        projectName = other.projectName;
+        customer = other.customer;
+        floors = other.floors;
+        budget = other.budget;
+        mainSupplier = other.mainSupplier;
+        status = other.status;
+        isApproved = other.isApproved;
+        designersCount = other.designersCount;
+        altSupplier = other.altSupplier;
+        
+    }
+    return *this;
+}
+
+Project::~Project() { cout << "[~] Знищено проект: " << projectName << "\n"; }
+
+void Project::printTotal() { cout << "\nЗагалом проектів: " << totalProjects << "\n"; }
 string Project::getProjectName() { return projectName; }
 void Project::setBaseInfo(string pName, string cust, int fl, double budg) { projectName = pName; customer = cust; floors = fl; budget = budg; }
 void Project::updateBudget(double newBudget) { budget = newBudget; }
@@ -76,47 +152,145 @@ void Project::updateBudget(double extraFunds, string reason) { budget += extraFu
 void Project::assignSupplier(Supplier s) { mainSupplier = s; budget -= s.getPrice(); }
 Supplier Project::getSupplier() { return mainSupplier; }
 
-void Project::generateAndSortFloors() {
-    int size = rand() % 5 + 5;
-    int* dynArray = new int[size];
-    for (int i = 0; i < size; i++) dynArray[i] = floors + (rand() % 10 - 5);
-    for (int i = 0; i < size - 1; i++) {
-        for (int j = 0; j < size - i - 1; j++) {
-            if (dynArray[j] > dynArray[j + 1]) swap(dynArray[j], dynArray[j + 1]);
-        }
-    }
-    delete[] dynArray;
-}
+// гетер для отримання бюджету
+double Project::getBudget() const { return budget; }
+
+void Project::generateAndSortFloors() {}
 void Project::saveToFile(string filename) {}
 void Project::loadFromFile(string filename) {}
-void Project::printInfo() { cout << "Проект: " << projectName << " (Замовник: " << customer << ") | Бюджет: " << budget << "$\n"; }
 
-//ДОДАТКОВІ КЛАСИ МНОЖИННОГО НАСЛІДУВАННЯ (П.4) 
-Standard::Standard(string sName) : standardName(sName) { cout << "[C] Викликано конструктор Standard\n"; }
-Standard::~Standard() { cout << "[~] Деструктор Standard\n"; }
-void Standard::printStandard() { cout << "Стандарт якості: " << standardName << "\n"; }
+void Project::printInfo() {
+    cout << "Проект: " << projectName << " | Бюджет: " << budget << "$\n";
+}
 
-Funding::Funding(double grant) : grantAmount(grant) { cout << "[C] Викликано конструктор Funding\n"; }
-Funding::~Funding() { cout << "[~] Деструктор Funding\n"; }
-void Funding::printFunding() { cout << "Сума державного гранту: " << grantAmount << "$\n"; }
+Standard::Standard(string sName) : standardName(sName) {}
+Standard::~Standard() {}
+void Standard::printStandard() { cout << "Стандарт: " << standardName << "\n"; }
 
-//STATE PROJECT (Множинне наслідування) 
-// П.5, П.7: Порядок виклику конструкторів при множинному наслідуванні
+Funding::Funding(double grant) : grantAmount(grant) {}
+Funding::~Funding() {}
+void Funding::printFunding() { cout << "Грант: " << grantAmount << "$\n"; }
+
+
 StateProject::StateProject(int pId, string pName, string cust, int fl, double budg, Supplier mSup, string sName, double grant, string ministry)
     : Project(pId, pName, cust, fl, budg, mSup), Standard(sName), Funding(grant), ministryName(ministry) {
-    cout << "[C] Викликано конструктор множинного наслідування StateProject\n";
 }
-StateProject::~StateProject() { cout << "[~] Деструктор StateProject\n"; }
+StateProject::~StateProject() { cout << "[~] Знищено державний проект\n"; }
+
+// П.10 пізнє наслідування
+void StateProject::printInfo() {
+    cout << "ДЕРЖ ПРОЕКТ (" << ministryName << ") | Назва: " << projectName << " | Бюджет: " << budget << "$\n";
+}
 
 void StateProject::showStateProjectDetails() {
-    cout << "\nДЕРЖАВНИЙ ПРОЕКТ\nМіністерство: " << ministryName << "\n";
-    Project::printInfo(); 
+    printInfo();
     Standard::printStandard();
     Funding::printFunding();
 }
 
-// CONTRACT
-Contract::Contract(Project* pr, Supplier* su, string d) : p(pr), s(su), date(d) {
-    cout << ">>> Укладено контракт між " << p->getProjectName() << " та " << s->getCompanyName() << " на " << date << "\n";
+Contract::Contract(Project* pr, Supplier* su, string d) : p(pr), s(su), date(d) {}
+Contract::~Contract() {}
+
+
+
+//Видалення об'єктів зі статичного масиву
+void Service_Static(Project arr[], int& currentSize, double minBudget) {
+    // Демонстрація try-catch №1-2
+    try {
+        if (currentSize <= 0)
+            throw invalid_argument("Помилка: Розмір масиву менший або дорівнює нулю.");
+        if (minBudget < 0)
+            throw invalid_argument("Помилка: Бюджет для фільтрації не може бути від'ємним.");
+
+        bool found = false;
+        for (int i = 0; i < currentSize; ) {
+            if (arr[i].getBudget() < minBudget) {
+                found = true;
+                
+                for (int j = i; j < currentSize - 1; j++) {
+                    arr[j] = arr[j + 1];
+                }
+                currentSize--; 
+            }
+            else {
+                i++;
+            }
+        }
+
+        
+        if (!found)
+            throw runtime_error("Інформація: Проектів з таким бюджетом для видалення не знайдено.");
+
+    }
+    catch (const invalid_argument& e) {
+        cout << "[КРИТИЧНА ПОМИЛКА МАСИВУ]: " << e.what() << endl;
+    }
+    catch (const runtime_error& e) {
+        cout << "[ПОВІДОМЛЕННЯ]: " << e.what() << endl;
+    }
 }
-Contract::~Contract() { cout << "[~] Контракт розірвано.\n"; }
+
+//Видалення об'єктів з динамічного масиву вказівників
+void Service_Dinamic(Project* arr[], int& currentSize, double minBudget) {
+    try {
+        if (arr == nullptr)
+            throw invalid_argument("Помилка: Передано порожній масив (nullptr).");
+        if (currentSize <= 0)
+            throw out_of_range("Помилка: Розмір динамічного масиву поза допустимими межами.");
+
+        for (int i = 0; i < currentSize; ) {
+            if (arr[i] == nullptr)
+                throw runtime_error("Помилка: Знайдено порожній вказівник всередині масиву.");
+
+            if (arr[i]->getBudget() < minBudget) {
+                delete arr[i];
+
+                for (int j = i; j < currentSize - 1; j++) {
+                    arr[j] = arr[j + 1];
+                }
+                currentSize--;
+            }
+            else {
+                i++;
+            }
+        }
+    }
+    catch (const exception& e) { 
+        cout << "[ПОМИЛКА ДИНАМІЧНОЇ ПАМ'ЯТІ]: " << e.what() << endl;
+    }
+}
+
+// П.7: Функція роботи з файлами 
+void Service(Document* doc, const string& filename, bool isWriteMode) {
+    try {
+        if (doc == nullptr)
+            throw invalid_argument("Вказівник на документ порожній, неможливо виконати операцію з файлом.");
+        if (filename.empty())
+            throw invalid_argument("Ім'я файлу не задано.");
+
+        if (isWriteMode) {
+            ofstream ofs(filename, ios::app); 
+            if (!ofs.is_open())
+                throw ios_base::failure("Неможливо відкрити файл для запису. Перевірте права доступу.");
+
+            doc->Write(ofs);
+            cout << "Дані успішно записано у файл " << filename << endl;
+            ofs.close();
+        }
+        else {
+            ifstream ifs(filename);
+            if (!ifs.is_open())
+                throw ios_base::failure("Неможливо відкрити файл для читання. Файлу не існує.");
+
+            doc->Read(ifs);
+            cout << "Дані успішно зчитано з файлу " << filename << endl;
+            ifs.close();
+        }
+    }
+    catch (const invalid_argument& e) {
+        cout << "[ПОМИЛКА ПАРАМЕТРІВ ФАЙЛУ]: " << e.what() << endl;
+    }
+    catch (const ios_base::failure& e) {
+        cout << "[ПОМИЛКА ДОСТУПУ ДО ФАЙЛУ]: " << e.what() << endl;
+    }
+}

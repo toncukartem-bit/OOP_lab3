@@ -1,12 +1,70 @@
 #pragma once
 #include <string>
 #include <iostream>
+#include <fstream> 
 
 using namespace std;
 
-// БАЗОВИЙ КЛАС 1 (з Лаби 2 і 3)
+class Document {
+protected:
+    string author;
+public:
+    Document(string a);
+
+    virtual ~Document();
+    virtual void showDocType() = 0;
+
+    // віртуальні методи 
+    virtual void Write(ofstream& os) = 0;
+    virtual void Read(ifstream& is) = 0;
+};
+
+
+ // П.2: віртуальне наслідування
+ // нащадок 1 технічний документ
+class TechDoc : virtual public Document {
+protected:
+    int pageCount;
+public:
+    TechDoc(string a, int pages);
+    virtual ~TechDoc(); 
+
+    void showDocType() override;
+    void Write(ofstream& os) override;
+    void Read(ifstream& is) override;
+};
+
+
+ //Нащадок 2 фінансовий документ
+class FinDoc : virtual public Document {
+protected:
+    double totalAmount;
+public:
+    FinDoc(string a, double amount);
+    virtual ~FinDoc();
+
+    void showDocType() override;
+    void Write(ofstream& os) override;
+    void Read(ifstream& is) override;
+};
+
+
+   //Нащадок 3: Комплексний документ 
+class ComplexDoc : public TechDoc, public FinDoc {
+private:
+    string targetMinistry;
+public:
+    ComplexDoc(string a, int pages, double amount, string ministry);
+    virtual ~ComplexDoc();
+
+    void showDocType() override;
+    void Write(ofstream& os) override;
+    void Read(ifstream& is) override;
+};
+
+
 class Supplier {
-protected: 
+protected:
     string companyName;
     string material;
     int deliveryDays;
@@ -21,7 +79,7 @@ public:
     Supplier();
     Supplier(string name, string mat, double pr, int days, int qty, string phone, bool rel, int rat);
     Supplier(const Supplier& other);
-    ~Supplier();
+    virtual ~Supplier();
 
     string getCompanyName();
     void setInfo(string name, string mat, double pr, int days);
@@ -29,24 +87,24 @@ public:
     void applyDiscount(double amount);
     Supplier getCheaper(Supplier other);
     double getPrice();
-    void printInfo();
+
+    virtual void printInfo();
+
     void saveToFile(string filename);
     void loadFromFile(string filename);
 };
 
-// ПОХІДНИЙ КЛАС (П.3 Закрите наслідування) 
 class LocalSupplier : private Supplier {
 private:
     string region;
 public:
     LocalSupplier(string name, string mat, double pr, int days, int qty, string phone, bool rel, int rat, string reg);
-    ~LocalSupplier();
+    virtual ~LocalSupplier();
     void showLocalInfo();
 };
 
-// БАЗОВИЙ КЛАС 2 (з Лаб 2 і 3)
 class Project {
-protected: // П.2: protected для спадкоємців
+protected:
     string projectName;
     string customer;
     int floors;
@@ -64,7 +122,10 @@ public:
     Project();
     Project(int pId, string pName, string cust, int fl, double budg, Supplier mSup);
     Project(const Project& other);
-    ~Project();
+
+    Project& operator=(const Project& other);
+
+    virtual ~Project();
 
     static void printTotal();
     string getProjectName();
@@ -73,20 +134,22 @@ public:
     void updateBudget(double extraFunds, string reason);
     void assignSupplier(Supplier s);
     Supplier getSupplier();
+    double getBudget() const;
+
     void generateAndSortFloors();
     void saveToFile(string filename);
     void loadFromFile(string filename);
-    void printInfo();
+
+    virtual void printInfo();
 };
 
-// ДОДАТКОВІ КЛАСИ ДЛЯ МНОЖИННОГО НАСЛІДУВАННЯ (П.4) 
 class Standard {
 protected:
     string standardName;
 public:
     Standard(string sName);
-    ~Standard();
-    void printStandard();
+    virtual ~Standard();
+    virtual void printStandard();
 };
 
 class Funding {
@@ -94,29 +157,39 @@ protected:
     double grantAmount;
 public:
     Funding(double grant);
-    ~Funding();
-    void printFunding();
+    virtual ~Funding();
+    virtual void printFunding();
 };
 
-// КЛАС МНОЖИННОГО НАСЛІДУВАННЯ (П.4) 
 class StateProject : public Project, public Standard, public Funding {
 private:
     string ministryName;
 public:
-    // П.5: Передача параметрів всім базовим конструкторам
     StateProject(int pId, string pName, string cust, int fl, double budg, Supplier mSup, string sName, double grant, string ministry);
-    ~StateProject();
+    virtual ~StateProject();
 
-    using Project::printInfo; // П.6: Використання оператора using
+    using Project::printInfo;
+
+    void printInfo() override;
     void showStateProjectDetails();
 };
 
-//КЛАС АСОЦІАЦІЇ (з Лаб 3) 
 class Contract {
 public:
     Project* p;
     Supplier* s;
     string date;
     Contract(Project* pr, Supplier* su, string d);
-    ~Contract();
+    ~Contract(); 
 };
+
+//глоб функції
+
+ // обробка статичного масиву
+void Service_Static(Project arr[], int& currentSize, double minBudget);
+
+// бробка масиву динамічних вказівників
+void Service_Dinamic(Project* arr[], int& currentSize, double minBudget);
+
+// універсальна функція роботи з файлами
+void Service(Document* doc, const string& filename, bool isWriteMode);
