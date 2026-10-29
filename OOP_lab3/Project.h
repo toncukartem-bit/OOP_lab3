@@ -1,7 +1,8 @@
 #pragma once
 #include <string>
 #include <iostream>
-#include <fstream> 
+#include <fstream>
+#include <stdexcept>
 
 using namespace std;
 
@@ -10,53 +11,40 @@ protected:
     string author;
 public:
     Document(string a);
-
     virtual ~Document();
     virtual void showDocType() = 0;
-
-    // віртуальні методи 
     virtual void Write(ofstream& os) = 0;
     virtual void Read(ifstream& is) = 0;
 };
 
-
- // П.2: віртуальне наслідування
- // нащадок 1 технічний документ
 class TechDoc : virtual public Document {
 protected:
     int pageCount;
 public:
     TechDoc(string a, int pages);
-    virtual ~TechDoc(); 
-
+    virtual ~TechDoc();
     void showDocType() override;
     void Write(ofstream& os) override;
     void Read(ifstream& is) override;
 };
 
-
- //Нащадок 2 фінансовий документ
 class FinDoc : virtual public Document {
 protected:
     double totalAmount;
 public:
     FinDoc(string a, double amount);
     virtual ~FinDoc();
-
     void showDocType() override;
     void Write(ofstream& os) override;
     void Read(ifstream& is) override;
 };
 
-
-   //Нащадок 3: Комплексний документ 
 class ComplexDoc : public TechDoc, public FinDoc {
 private:
     string targetMinistry;
 public:
     ComplexDoc(string a, int pages, double amount, string ministry);
     virtual ~ComplexDoc();
-
     void showDocType() override;
     void Write(ofstream& os) override;
     void Read(ifstream& is) override;
@@ -87,9 +75,7 @@ public:
     void applyDiscount(double amount);
     Supplier getCheaper(Supplier other);
     double getPrice();
-
     virtual void printInfo();
-
     void saveToFile(string filename);
     void loadFromFile(string filename);
 };
@@ -103,6 +89,7 @@ public:
     void showLocalInfo();
 };
 
+
 class Project {
 protected:
     string projectName;
@@ -110,6 +97,9 @@ protected:
     int floors;
     double budget;
     Supplier mainSupplier;
+
+    //Масив для перевантаження оператора []
+    double expenses[5];
 
 public:
     const int id;
@@ -122,10 +112,37 @@ public:
     Project();
     Project(int pId, string pName, string cust, int fl, double budg, Supplier mSup);
     Project(const Project& other);
-
-    Project& operator=(const Project& other);
-
     virtual ~Project();
+
+    
+    //перевантаження унарних операторів(++ і --)
+    Project& operator++();      
+    Project operator++(int);    
+    Project& operator--(); 
+    Project operator--(int);    
+
+   
+    //перевантаження бінарних операторів(+ і -)
+    //вертають новий об'єкт Project
+    Project operator+(double extraBudget) const;
+    Project operator-(double reduceBudget) const;
+
+
+    Project operator*(double multiplier) const; 
+    Project& operator=(const Project& other);  
+    Project& operator+=(double amount);        
+    Project& operator-=(double amount);         
+    Project& operator*=(double multiplier);    
+
+    // Перевантаження індексатора [], можна звертатися до об'єкта як до масиву
+    double& operator[](int index);
+
+  
+    //шаблонна функція можеприймати будь-який тип даних
+    template <typename T>
+    void logExtraInfo(T info) const {
+        cout << "[ШАБЛОННИЙ ЛОГ " << projectName << "]: " << info << "\n";
+    }
 
     static void printTotal();
     string getProjectName();
@@ -135,13 +152,12 @@ public:
     void assignSupplier(Supplier s);
     Supplier getSupplier();
     double getBudget() const;
-
     void generateAndSortFloors();
     void saveToFile(string filename);
     void loadFromFile(string filename);
-
     virtual void printInfo();
 };
+
 
 class Standard {
 protected:
@@ -167,9 +183,7 @@ private:
 public:
     StateProject(int pId, string pName, string cust, int fl, double budg, Supplier mSup, string sName, double grant, string ministry);
     virtual ~StateProject();
-
     using Project::printInfo;
-
     void printInfo() override;
     void showStateProjectDetails();
 };
@@ -180,16 +194,50 @@ public:
     Supplier* s;
     string date;
     Contract(Project* pr, Supplier* su, string d);
-    ~Contract(); 
+    ~Contract();
 };
 
-//глоб функції
-
- // обробка статичного масиву
 void Service_Static(Project arr[], int& currentSize, double minBudget);
-
-// бробка масиву динамічних вказівників
 void Service_Dinamic(Project* arr[], int& currentSize, double minBudget);
-
-// універсальна функція роботи з файлами
 void Service(Document* doc, const string& filename, bool isWriteMode);
+
+
+
+ //шаблонний клас
+template <class T>
+class TemplateContainer {
+private:
+    T* dataArray;       // Шаблонні дані 
+    int capacity;       
+    int currentSize;    
+
+public:
+    TemplateContainer(int cap = 10) : capacity(cap), currentSize(0) {
+        dataArray = new T[capacity];
+    }
+
+    ~TemplateContainer() {
+        delete[] dataArray;
+    }
+
+    void addElement(const T& element) {
+        if (currentSize < capacity) {
+            dataArray[currentSize] = element;
+            currentSize++;
+        }
+        else {
+            cout << "Контейнер заповнений!\n";
+        }
+    }
+
+    T& getElement(int index) {
+        if (index < 0 || index >= currentSize) {
+            throw out_of_range("Індекс виходить за межі контейнера!");
+        }
+        return dataArray[index];
+    }
+
+    int getSize() const {
+        return currentSize;
+    }
+};
